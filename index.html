@@ -397,29 +397,38 @@
       }
       
       createDoor() {
-        const frameGeometry = new THREE.BoxGeometry(6, 10, 2);
-        const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
-        this.door = new THREE.Mesh(frameGeometry, frameMaterial);
-        this.door.position.set(0, 5, -92); 
-        this.scene.add(this.door);
-        
-        const exitSignGeo = new THREE.BoxGeometry(3, 1, 0.5);
-        const exitSignMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 2 });
-        const exitSign = new THREE.Mesh(exitSignGeo, exitSignMat);
-        exitSign.position.set(0, 4, 1);
-        this.door.add(exitSign);
-        
-        const warningLightGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-        const warningLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
-        this.door.userData.lights = [];
-        for (let i = 0; i < 4; i++) {
-          const light = new THREE.Mesh(warningLightGeometry, warningLightMaterial.clone());
-          light.position.set((i % 2) * 4 - 2, Math.floor(i / 2) * 6 - 2, 1.1);
-          this.door.add(light);
-          this.door.userData.lights.push(light);
-        }
-        this.door.userData.powered = false;
-      }
+  const frameGeometry = new THREE.BoxGeometry(6, 10, 2);
+  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+  this.door = new THREE.Mesh(frameGeometry, frameMaterial);
+  this.door.position.set(0, 5, -92); 
+  this.scene.add(this.door);
+  
+  const exitSignGeo = new THREE.BoxGeometry(3, 1, 0.5);
+  const exitSignMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 2 });
+  const exitSign = new THREE.Mesh(exitSignGeo, exitSignMat);
+  exitSign.position.set(0, 4, 1);
+  this.door.add(exitSign);
+  
+  const warningLightGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+  const warningLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
+  this.door.userData.lights = [];
+  for (let i = 0; i < 4; i++) {
+    const light = new THREE.Mesh(warningLightGeometry, warningLightMaterial.clone());
+    light.position.set((i % 2) * 4 - 2, Math.floor(i / 2) * 6 - 2, 1.1);
+    this.door.add(light);
+    this.door.userData.lights.push(light);
+  }
+
+  // FIX: Pre-add the green door light but keep it hidden
+  const doorPointLight = new THREE.PointLight(0x00ff00, 2, 15);
+  doorPointLight.position.set(0, 4, 0.6);
+  doorPointLight.visible = false;
+  doorPointLight.intensity = 0;
+  this.door.add(doorPointLight);
+  this.door.userData.doorPointLight = doorPointLight;
+
+  this.door.userData.powered = false;
+}
       
       createEntity() {
         const entityGroup = new THREE.Group();
@@ -562,30 +571,37 @@
         return false;
       }
       
-      checkCubeCollection() {
-        for (let i = this.cubes.length - 1; i >= 0; i--) {
-          const cube = this.cubes[i];
-          const distance = this.player.position.distanceTo(cube.position);
-          if (distance < 2) {
-            this.scene.remove(cube);
-            if (cube.userData.light) this.scene.remove(cube.userData.light);
-            this.cubes.splice(i, 1);
-            cubesCollected++;
-            document.getElementById('cubeCount').textContent = cubesCollected;
-            if (this.cubes.length === 0) { this.powerDoor(); }
-            this.playCollectionSound();
-          }
-        }
+     checkCubeCollection() {
+  for (let i = this.cubes.length - 1; i >= 0; i--) {
+    const cube = this.cubes[i];
+    const distance = this.player.position.distanceTo(cube.position);
+    if (distance < 2) {
+      this.scene.remove(cube); // Removing a mesh is fine, it doesn't recompile shaders
+      
+      if (cube.userData.light) {
+        // FIX: Hide the light instead of removing it from the scene
+        cube.userData.light.intensity = 0;
+        cube.userData.light.visible = false;
       }
       
+      this.cubes.splice(i, 1);
+      cubesCollected++;
+      document.getElementById('cubeCount').textContent = cubesCollected;
+      if (this.cubes.length === 0) { this.powerDoor(); }
+      this.playCollectionSound();
+    }
+  }
+}
       powerDoor() {
-        this.door.userData.powered = true;
-        this.door.userData.lights.forEach(light => { light.material.emissiveIntensity = 1; });
-        const pointLight = new THREE.PointLight(0x00ff00, 2, 15);
-        pointLight.position.set(0, 4, 0.6);
-        this.door.add(pointLight);
-        document.getElementById('controls').innerHTML = '<span style="color: #86efac; font-weight: bold; animation: pulse 1s infinite">DOOR POWERED - Press E to escape!</span>';
-      }
+  this.door.userData.powered = true;
+  this.door.userData.lights.forEach(light => { light.material.emissiveIntensity = 1; });
+  
+  // FIX: Reveal the pre-added light instead of creating a new one
+  this.door.userData.doorPointLight.visible = true;
+  this.door.userData.doorPointLight.intensity = 2;
+  
+  document.getElementById('controls').innerHTML = '<span style="color: #86efac; font-weight: bold; animation: pulse 1s infinite">DOOR POWERED - Press E to escape!</span>';
+}
       
       // --- LINE OF SIGHT CHECK ---
       checkVisibility() {
