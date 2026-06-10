@@ -100,7 +100,7 @@
     let game = null;
     let gameState = 'menu';
     let cubesCollected = 0;
-    let timeLeft = 420;
+    let timeLeft = 300;
     let timerInterval = null;
 
     class BackroomsGame {
@@ -123,6 +123,7 @@
           staminaRegen: 10,  
           isMoving: false,
           isSprinting: false
+          exhausted: false
         };
         
         // --- ENTITY CONFIGURATION ---
@@ -502,21 +503,33 @@
       }
       
       updatePlayer(delta) {
-        const isPressingMovement = this.keys['KeyW'] || this.keys['KeyS'] || this.keys['KeyA'] || this.keys['KeyD'];
-        this.player.isMoving = isPressingMovement;
-        this.player.isSprinting = this.keys['ShiftLeft'] && this.player.isMoving && this.player.stamina > 0;
-        
-        if (this.player.isSprinting) {
-          this.player.stamina = Math.max(0, this.player.stamina - this.player.staminaDrain * delta);
-        } else if (this.player.stamina < this.player.maxStamina) {
-          this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + this.player.staminaRegen * delta);
-        }
-        
-        const staminaBar = document.getElementById('staminaBar');
-        if (staminaBar) {
-            staminaBar.style.width = `${this.player.stamina}%`;
-            staminaBar.style.backgroundColor = this.player.stamina < 20 ? '#ef4444' : '#eab308';
-        }
+  const isPressingMovement = this.keys['KeyW'] || this.keys['KeyS'] || this.keys['KeyA'] || this.keys['KeyD'];
+  this.player.isMoving = isPressingMovement;
+
+  // FIX: Lock sprinting if stamina hits 0, unlock when it reaches max
+  if (this.player.stamina <= 0) { 
+    this.player.exhausted = true; 
+  }
+  if (this.player.exhausted && this.player.stamina >= this.player.maxStamina) { 
+    this.player.exhausted = false; 
+  }
+
+  // Check that the player is not exhausted before allowing them to sprint
+  this.player.isSprinting = this.keys['ShiftLeft'] && this.player.isMoving && this.player.stamina > 0 && !this.player.exhausted;
+  
+  if (this.player.isSprinting) {
+    this.player.stamina = Math.max(0, this.player.stamina - this.player.staminaDrain * delta);
+  } else if (this.player.stamina < this.player.maxStamina) {
+    this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + this.player.staminaRegen * delta);
+  }
+  
+  // Update stamina UI
+  const staminaBar = document.getElementById('staminaBar');
+  if (staminaBar) {
+      staminaBar.style.width = `${this.player.stamina}%`;
+      // Optionally turn the bar red while exhausted so the player knows why they can't sprint
+      staminaBar.style.backgroundColor = this.player.exhausted ? '#ef4444' : '#eab308';
+  }
         
         const speed = this.player.isSprinting ? this.player.sprintSpeed : this.player.moveSpeed;
         const moveVector = new THREE.Vector3();
