@@ -59,10 +59,10 @@
     <div class="menu-content">
       <h1>THE BACKROOMS</h1>
       <p class="description">You've noclipped into the Backrooms. Find all 10 power cubes to unlock the exit door.</p>
-      <p class="instructions">🎮 WASD to move • Shift to sprint • Mouse to look • E to interact</p>
-      <p class="instructions warning">⚠️ The Entity hunts by sight. Break line of sight to survive.</p>
-      <p class="instructions tip">💡 It drifts towards you even when wandering. Keep moving.</p>
-      <p class="instructions timer-warning">⏰ You have 7 minutes to escape</p>
+      <p class="instructions">WASD to move • Shift to sprint • Mouse to look • E to interact(Open Door)</p>
+      <p class="instructions warning">The Entity hunts by sight. Break line of sight to survive.</p>
+      <p class="instructions tip">It drifts towards you even when wandering. Keep moving.</p>
+      <p class="instructions timer-warning">You have 3 minutes to escape</p>
       <button class="start-btn" onclick="startGame()">ENTER THE BACKROOMS</button>
     </div>
   </div>
@@ -100,7 +100,7 @@
     let game = null;
     let gameState = 'menu';
     let cubesCollected = 0;
-    let timeLeft = 300;
+    let timeLeft = 180;
     let timerInterval = null;
 
     class BackroomsGame {
@@ -888,7 +888,7 @@
 
     function startGame() {
       cubesCollected = 0;
-      timeLeft = 420;
+      timeLeft = 180;
       gameState = 'playing';
       document.getElementById('menuScreen').classList.add('hidden');
       document.getElementById('endScreen').classList.add('hidden');
