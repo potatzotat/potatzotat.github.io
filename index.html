@@ -30,12 +30,14 @@
     h1 { font-size: clamp(3rem, 8vw, 5.5rem); 
       color: var(--yellow-glow); 
       letter-spacing: 0.15em; 
-      padding-left: 0.15em;    /* Counteracts the trailing letter-spacing perfectly */
-      margin: 0 0 1rem 0;      /* Removed 'auto' margins so Flexbox can do the centering */
+      margin: 0 auto 1rem auto; 
       font-weight: 800; 
       animation: humFlicker 4s infinite;
       text-align: center;
-      width: 100%;}
+
+      /* FIXES THE OFF-CENTER BUG: */
+      text-indent: 0;          /* Remove the over-correcting indent */
+      padding-left: 0.15em;}
     .description { color: #fef3c7; font-size: 1.2rem; margin-bottom: 1.5rem; }
     .instructions { color: #fef08a; font-size: 0.9rem; margin-bottom: 0.5rem; }
     .warning { color: #fca5a5; font-weight: bold; }
