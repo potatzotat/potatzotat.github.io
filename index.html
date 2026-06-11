@@ -10,34 +10,9 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; overflow: hidden; background: #000; }
     #gameCanvas { display: block; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
     .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; }
-    .menu-screen {position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center; /* Center horizontally */
-  align-items: center;     /* Center vertically */
-  z-index: 10;
-  background: linear-gradient(to bottom, #4a3b2a, #000); }
-    .menu-content { display: flex;
-      flex-direction: column;
-      align-items: center;     /* Forces every block item to be perfectly centered */
-      text-align: center;      
-      padding: 2rem;
-      max-width: 600px;
-      width: 100%; }
-    h1 { font-size: clamp(3rem, 8vw, 5.5rem); 
-      color: var(--yellow-glow); 
-      letter-spacing: 0.15em; 
-      margin: 0 auto 1rem auto; 
-      font-weight: 800; 
-      animation: humFlicker 4s infinite;
-      text-align: center;
-
-      /* FIXES THE OFF-CENTER BUG: */
-      text-indent: 0;          /* Remove the over-correcting indent */
-      padding-left: 0.15em;}
+    .menu-screen { background: linear-gradient(to bottom, #4a3b2a, #000); }
+    .menu-content { text-align: center; padding: 2rem; max-width: 600px; }
+    h1 { font-size: 4rem; color: #fef08a; margin-bottom: 1rem; text-shadow: 0 0 20px rgba(255,255,0,0.5); letter-spacing: 0.1em; }
     .description { color: #fef3c7; font-size: 1.2rem; margin-bottom: 1.5rem; }
     .instructions { color: #fef08a; font-size: 0.9rem; margin-bottom: 0.5rem; }
     .warning { color: #fca5a5; font-weight: bold; }
@@ -75,16 +50,6 @@
     .end-screen.lost .retry-btn:hover { background: #ef4444; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     .hidden { display: none !important; }
-    :root {
-  --yellow-glow: #fef08a; /* This defines the color variable */
-}
-
-@keyframes humFlicker {
-  0%, 100% { opacity: 0.95; text-shadow: 0 0 15px rgba(254, 240, 138, 0.4); }
-  50% { opacity: 1; text-shadow: 0 0 25px rgba(254, 240, 138, 0.7), 0 0 40px rgba(234, 179, 8, 0.3); }
-  51% { opacity: 0.85; }
-  52% { opacity: 1; }
-}
   </style>
 </head>
 <body>
