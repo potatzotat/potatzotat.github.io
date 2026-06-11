@@ -10,9 +10,21 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; overflow: hidden; background: #000; }
     #gameCanvas { display: block; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
     .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; }
-    .menu-screen { background: linear-gradient(to bottom, #4a3b2a, #000); }
-    .menu-content { text-align: center; padding: 2rem; max-width: 600px; }
-    h1 { font-size: clamp(3rem, 8vw, 5.5rem); color: var(--yellow-glow); text-indent: 0.15em; letter-spacing: 0.15em; margin-bottom: 1.5rem; font-weight: 800; animation: humFlicker 4s infinite; margin: 0;}
+    .menu-screen {position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;    /* Centers vertically */
+  justify-content: center; /* Centers horizontally */
+  z-index: 10;
+  background: linear-gradient(to bottom, #4a3b2a, #000); }
+    .menu-content { text-align: center;      /* Centers the h1 and p tags inside the box */
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%; }
+    h1 { font-size: clamp(3rem, 8vw, 5.5rem); color: var(--yellow-glow); text-indent: 0.15em; letter-spacing: 0.15em; margin: 0 auto 1rem auto; font-weight: 800; animation: humFlicker 4s infinite;}
     .description { color: #fef3c7; font-size: 1.2rem; margin-bottom: 1.5rem; }
     .instructions { color: #fef08a; font-size: 0.9rem; margin-bottom: 0.5rem; }
     .warning { color: #fca5a5; font-weight: bold; }
