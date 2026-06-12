@@ -28,8 +28,15 @@
     .timer.critical { background: rgba(127,29,29,0.7); border-color: #ef4444; }
     .timer-text { font-size: 1.5rem; color: #fde047; font-weight: bold; }
     .timer.critical .timer-text { color: #fca5a5; }
-    .stamina-container { position: absolute; bottom: 5rem; left: 50%; transform: translateX(-50%); width: 300px; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 6px; z-index: 5; overflow: hidden; }
-    .stamina-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #eab308, #ca8a04); transition: width 0.1s linear; }
+    
+    /* Modified Stamina UI styles */
+    .stamina-wrapper { position: absolute; bottom: 5rem; left: 50%; transform: translateX(-50%); width: 300px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
+    .stamina-container { width: 100%; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 6px; overflow: hidden; }
+    .stamina-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #eab308, #ca8a04); transition: width 0.1s linear, background-color 0.2s; }
+    .exhausted-text { color: #ef4444; font-weight: bold; font-size: 1.1rem; margin-bottom: 0.4rem; opacity: 0; transition: opacity 0.2s; letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(239,68,68,0.8); }
+    .exhausted-text.active { opacity: 1; animation: pulse-exhausted 0.8s infinite alternate; }
+    @keyframes pulse-exhausted { from { opacity: 1; } to { opacity: 0.6; } }
+
     .controls { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); padding: 0.75rem 1.5rem; border-radius: 0.5rem; color: #d1d5db; font-size: 0.9rem; z-index: 5; white-space: nowrap; font-family: monospace;}
     .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: white; border-radius: 50%; opacity: 0.5; box-shadow: 0 0 10px white; z-index: 5; }
     .jumpscare { background: #000; animation: shake 0.1s infinite; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -74,8 +81,15 @@
         <div class="cube-label">POWER CUBES</div>
       </div>
     </div>
-    <div id="timer" class="timer"><div class="timer-text" id="timerText">7:00</div></div>
-    <div class="stamina-container"><div id="staminaBar" class="stamina-bar"></div></div>
+    <!-- FIXED: Timer starts at 3:00 -->
+    <div id="timer" class="timer"><div class="timer-text" id="timerText">3:00</div></div>
+    
+    <!-- FIXED: Added Exhausted Text and updated structure -->
+    <div class="stamina-wrapper">
+      <div id="exhaustedText" class="exhausted-text">EXHAUSTED</div>
+      <div class="stamina-container"><div id="staminaBar" class="stamina-bar"></div></div>
+    </div>
+    
     <div id="controls" class="controls">WASD: Move • Shift: Sprint • Mouse: Look • Hide behind walls</div>
     <div class="crosshair"></div>
   </div>
@@ -134,11 +148,14 @@
           speed: 4.0,          
           chaseSpeed: 9.3,     
           detectionRange: 50,  
-          fov: Math.PI / 2, // 90 degree field of view
+          fov: Math.PI / 2, 
           state: 'patrol',     
           patrolTarget: null,
           lastKnownPos: null,  
-          visible: true
+          visible: true,
+          // Added timers to prevent getting stuck & to enforce drifting
+          searchTimer: 0,
+          patrolTimer: 0
         };
         
         this.cubes = [];
@@ -153,9 +170,8 @@
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.sounds = {};
         
-        // Procedural Textures
-        this.wallTexture = this.createProceduralTexture('#C2B280', true); // Yellow Wall
-        this.floorTexture = this.createProceduralTexture('#5a4a2a', false); // Dark Carpet
+        this.wallTexture = this.createProceduralTexture('#C2B280', true); 
+        this.floorTexture = this.createProceduralTexture('#5a4a2a', false); 
         
         this.init();
       }
@@ -166,11 +182,9 @@
           canvas.height = 512;
           const ctx = canvas.getContext('2d');
           
-          // Base
           ctx.fillStyle = baseColor; 
           ctx.fillRect(0, 0, 512, 512);
           
-          // Noise/Grime
           for (let i = 0; i < 40000; i++) {
               const x = Math.random() * 512;
               const y = Math.random() * 512;
@@ -179,13 +193,11 @@
               ctx.fillRect(x, y, 2, 2);
           }
           
-          // Wallpaper Pattern
           if (isWall) {
               ctx.fillStyle = 'rgba(80, 70, 30, 0.1)';
               for (let i = 0; i < 512; i+=40) {
-                  ctx.fillRect(i, 0, 5, 512); // Stripes
+                  ctx.fillRect(i, 0, 5, 512); 
                   
-                  // Diamonds
                   for(let j=0; j<512; j+=40) {
                       ctx.beginPath();
                       ctx.moveTo(i+20, j);
@@ -205,14 +217,14 @@
 
       init() {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.shadowMap.enabled = true; // Enabled shadows for better visuals
+        this.renderer.shadowMap.enabled = true; 
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.setClearColor(0x0a0a0a);
         
         this.camera.position.copy(this.player.position);
         
         this.scene.background = new THREE.Color(0x0a0a0a);
-        this.scene.fog = new THREE.FogExp2(0x0a0a0a, 0.02); // Darker fog
+        this.scene.fog = new THREE.FogExp2(0x0a0a0a, 0.02); 
         
         this.createLighting();
         this.generateMaze();
@@ -229,11 +241,9 @@
       }
       
       createLighting() {
-        // Reduced ambient light for better contrast
         const ambientLight = new THREE.AmbientLight(0x222222, 0.5);
         this.scene.add(ambientLight);
         
-        // Player flashlight
         const flashLight = new THREE.SpotLight(0xffffff, 1, 40, Math.PI/6, 0.5, 1);
         flashLight.position.set(0,0,0);
         flashLight.target.position.set(0,0,-1);
@@ -278,7 +288,6 @@
           roughness: 0.9
         });
         
-        // Create Pillars and Lights together
         for (let i = 0; i < 20; i++) {
           const x = Math.random() * 160 - 80;
           const z = Math.random() * 160 - 80;
@@ -293,7 +302,6 @@
           this.scene.add(pillar);
           this.walls.push(pillar);
 
-          // Add a light fixture occasionally
           if (Math.random() > 0.4) {
               this.createCeilingLight(x, 11.9, z + 4); 
           }
@@ -316,7 +324,7 @@
         const wallGeometry = new THREE.BoxGeometry(width, height, depth);
         const localTexture = this.wallTexture.clone();
         localTexture.needsUpdate = true;
-        localTexture.repeat.set(Math.max(width, depth) / 8, height / 8); // Adjusted scale
+        localTexture.repeat.set(Math.max(width, depth) / 8, height / 8); 
         
         const wallMaterial = new THREE.MeshStandardMaterial({ 
           map: localTexture,
@@ -334,24 +342,20 @@
       }
 
       createCeilingLight(x, y, z) {
-          // The fixture mesh
           const boxGeo = new THREE.BoxGeometry(4, 0.2, 2);
           const boxMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
           const mesh = new THREE.Mesh(boxGeo, boxMat);
           mesh.position.set(x, y, z);
           this.scene.add(mesh);
 
-          // The actual light
           const light = new THREE.PointLight(0xffffcc, 0.8, 30);
           light.position.set(x, y - 1, z);
           light.castShadow = true;
-          // Optimize shadow properties
           light.shadow.mapSize.width = 512;
           light.shadow.mapSize.height = 512;
           light.shadow.camera.near = 0.5;
           light.shadow.camera.far = 30;
           
-          // Light Flicker
           light.userData.flickerSpeed = Math.random() * 5;
           this.lights.push(light);
           this.scene.add(light);
@@ -367,7 +371,7 @@
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             this.scene.add(mesh);
-            this.walls.push(mesh); // Add to walls so entity collides with decor too
+            this.walls.push(mesh); 
         }
       }
       
@@ -384,7 +388,6 @@
             attempts++;
           }
           if (!validPosition) { cube.position.set(i * 2, 1, 5); }
-          // Add small point light to every cube
           const light = new THREE.PointLight(0x00ffff, 1, 10);
           light.position.copy(cube.position);
           this.scene.add(light);
@@ -398,37 +401,36 @@
       }
       
       createDoor() {
-  const frameGeometry = new THREE.BoxGeometry(6, 10, 2);
-  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
-  this.door = new THREE.Mesh(frameGeometry, frameMaterial);
-  this.door.position.set(0, 5, -92); 
-  this.scene.add(this.door);
-  
-  const exitSignGeo = new THREE.BoxGeometry(3, 1, 0.5);
-  const exitSignMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 2 });
-  const exitSign = new THREE.Mesh(exitSignGeo, exitSignMat);
-  exitSign.position.set(0, 4, 1);
-  this.door.add(exitSign);
-  
-  const warningLightGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-  const warningLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
-  this.door.userData.lights = [];
-  for (let i = 0; i < 4; i++) {
-    const light = new THREE.Mesh(warningLightGeometry, warningLightMaterial.clone());
-    light.position.set((i % 2) * 4 - 2, Math.floor(i / 2) * 6 - 2, 1.1);
-    this.door.add(light);
-    this.door.userData.lights.push(light);
-  }
+        const frameGeometry = new THREE.BoxGeometry(6, 10, 2);
+        const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.2 });
+        this.door = new THREE.Mesh(frameGeometry, frameMaterial);
+        this.door.position.set(0, 5, -92); 
+        this.scene.add(this.door);
+        
+        const exitSignGeo = new THREE.BoxGeometry(3, 1, 0.5);
+        const exitSignMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 2 });
+        const exitSign = new THREE.Mesh(exitSignGeo, exitSignMat);
+        exitSign.position.set(0, 4, 1);
+        this.door.add(exitSign);
+        
+        const warningLightGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const warningLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
+        this.door.userData.lights = [];
+        for (let i = 0; i < 4; i++) {
+          const light = new THREE.Mesh(warningLightGeometry, warningLightMaterial.clone());
+          light.position.set((i % 2) * 4 - 2, Math.floor(i / 2) * 6 - 2, 1.1);
+          this.door.add(light);
+          this.door.userData.lights.push(light);
+        }
 
-  // FIX: Pre-add the green door light but keep it hidden
-  const doorPointLight = new THREE.PointLight(0x00ff00, 2, 15);
-  doorPointLight.position.set(0, 4, 0.6);
-  doorPointLight.intensity = 0;
-  this.door.add(doorPointLight);
-  this.door.userData.doorPointLight = doorPointLight;
+        const doorPointLight = new THREE.PointLight(0x00ff00, 2, 15);
+        doorPointLight.position.set(0, 4, 0.6);
+        doorPointLight.intensity = 0;
+        this.door.add(doorPointLight);
+        this.door.userData.doorPointLight = doorPointLight;
 
-  this.door.userData.powered = false;
-}
+        this.door.userData.powered = false;
+      }
       
       createEntity() {
         const entityGroup = new THREE.Group();
@@ -437,7 +439,6 @@
         const core = new THREE.Mesh(coreGeo, coreMat);
         entityGroup.add(core);
         
-        // Glitch effect meshes
         const glitchGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
         const glitchMat = new THREE.MeshStandardMaterial({ color: 0x000000, metalness: 1 });
         entityGroup.userData.glitchParts = [];
@@ -449,7 +450,6 @@
             entityGroup.userData.glitchParts.push(mesh);
         }
         
-        // Entity glows red
         const light = new THREE.PointLight(0xff0000, 2, 15);
         entityGroup.add(light);
         entityGroup.position.copy(this.entity.position);
@@ -460,22 +460,23 @@
 
       // --- IMPROVED WANDERING LOGIC ---
       setNewPatrolTarget() {
-        // Bias movement towards the player
+        this.entity.patrolTimer = 0; // Reset wander timer
+        // Bias movement towards the player strongly to ensure constant drifting
         const biasDirection = new THREE.Vector3()
             .subVectors(this.player.position, this.entity.position)
             .normalize();
         
-        // Add significant randomness so it doesn't just beeline for the player
-        const randomX = (Math.random() - 0.5) * 2; // -1 to 1
-        const randomZ = (Math.random() - 0.5) * 2; // -1 to 1
+        // Add minimal randomness so it reliably drifts towards the player
+        const randomX = (Math.random() - 0.5) * 1.5; 
+        const randomZ = (Math.random() - 0.5) * 1.5; 
         
         const moveDir = new THREE.Vector3(biasDirection.x + randomX, 0, biasDirection.z + randomZ).normalize();
         
-        // Set target 20-30 units away in that semi-random direction
-        const distance = 20 + Math.random() * 10;
+        // Set target 15-30 units away in the biased direction
+        const distance = 15 + Math.random() * 15;
         this.entity.patrolTarget = this.entity.position.clone().add(moveDir.multiplyScalar(distance));
         
-        // Keep within bounds roughly
+        // Keep within bounds
         this.entity.patrolTarget.x = Math.max(-90, Math.min(90, this.entity.patrolTarget.x));
         this.entity.patrolTarget.z = Math.max(-90, Math.min(90, this.entity.patrolTarget.z));
       }
@@ -503,34 +504,39 @@
       }
       
       updatePlayer(delta) {
-  const isPressingMovement = this.keys['KeyW'] || this.keys['KeyS'] || this.keys['KeyA'] || this.keys['KeyD'];
-  this.player.isMoving = isPressingMovement;
+        const isPressingMovement = this.keys['KeyW'] || this.keys['KeyS'] || this.keys['KeyA'] || this.keys['KeyD'];
+        this.player.isMoving = isPressingMovement;
 
-  // FIX: Lock sprinting if stamina hits 0, unlock when it reaches max
-  if (this.player.stamina <= 0) { 
-    this.player.exhausted = true; 
-  }
-  if (this.player.exhausted && this.player.stamina >= this.player.maxStamina) { 
-    this.player.exhausted = false; 
-  }
+        if (this.player.stamina <= 0) { 
+          this.player.exhausted = true; 
+        }
+        if (this.player.exhausted && this.player.stamina >= this.player.maxStamina) { 
+          this.player.exhausted = false; 
+        }
 
-  // Check that the player is not exhausted before allowing them to sprint
-  this.player.isSprinting = this.keys['ShiftLeft'] && this.player.isMoving && this.player.stamina > 0 && !this.player.exhausted;
-  
-  if (this.player.isSprinting) {
-    this.player.stamina = Math.max(0, this.player.stamina - this.player.staminaDrain * delta);
-  } else if (this.player.stamina < this.player.maxStamina) {
-    this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + this.player.staminaRegen * delta);
-  }
-  
-  // Update stamina UI
-  const staminaBar = document.getElementById('staminaBar');
-  if (staminaBar) {
-      staminaBar.style.width = `${this.player.stamina}%`;
-      // Optionally turn the bar red while exhausted so the player knows why they can't sprint
-      staminaBar.style.backgroundColor = this.player.exhausted ? '#ef4444' : '#eab308';
-  }
+        this.player.isSprinting = this.keys['ShiftLeft'] && this.player.isMoving && this.player.stamina > 0 && !this.player.exhausted;
         
+        if (this.player.isSprinting) {
+          this.player.stamina = Math.max(0, this.player.stamina - this.player.staminaDrain * delta);
+        } else if (this.player.stamina < this.player.maxStamina) {
+          this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + this.player.staminaRegen * delta);
+        }
+        
+        // Update stamina and exhausted UI
+        const staminaBar = document.getElementById('staminaBar');
+        const exhaustedText = document.getElementById('exhaustedText');
+        if (staminaBar) {
+            staminaBar.style.width = `${this.player.stamina}%`;
+            staminaBar.style.backgroundColor = this.player.exhausted ? '#ef4444' : '#eab308';
+        }
+        if (exhaustedText) {
+            if (this.player.exhausted) {
+                exhaustedText.classList.add('active');
+            } else {
+                exhaustedText.classList.remove('active');
+            }
+        }
+              
         const speed = this.player.isSprinting ? this.player.sprintSpeed : this.player.moveSpeed;
         const moveVector = new THREE.Vector3();
         if (this.keys['KeyW']) moveVector.z -= 1;
@@ -572,7 +578,6 @@
         return false;
       }
 
-      // --- ENTITY COLLISION (NO PHASING) ---
       checkEntityCollision(position) {
         const radius = 1.0; 
         for (let wall of this.walls) {
@@ -583,37 +588,35 @@
         return false;
       }
       
-   checkCubeCollection() {
-  for (let i = this.cubes.length - 1; i >= 0; i--) {
-    const cube = this.cubes[i];
-    const distance = this.player.position.distanceTo(cube.position);
-    
-    if (distance < 2) {
-      // FIX: Hide the cube and turn off the light to avoid shader recompile
-      cube.visible = false;
-      if (cube.userData.light) {
-        cube.userData.light.intensity = 0;
+      checkCubeCollection() {
+        for (let i = this.cubes.length - 1; i >= 0; i--) {
+          const cube = this.cubes[i];
+          const distance = this.player.position.distanceTo(cube.position);
+          
+          if (distance < 2) {
+            cube.visible = false;
+            if (cube.userData.light) {
+              cube.userData.light.intensity = 0;
+            }
+            
+            this.cubes.splice(i, 1);
+            cubesCollected++;
+            
+            document.getElementById('cubeCount').textContent = cubesCollected;
+            if (this.cubes.length === 0) { this.powerDoor(); }
+            this.playCollectionSound();
+          }
+        }
       }
-      
-      // Remove from logic array, but NOT from the Three.js scene graph
-      this.cubes.splice(i, 1);
-      cubesCollected++;
-      
-      document.getElementById('cubeCount').textContent = cubesCollected;
-      if (this.cubes.length === 0) { this.powerDoor(); }
-      this.playCollectionSound();
-    }
-  }
-}
+
       powerDoor() {
-  this.door.userData.powered = true;
-  this.door.userData.lights.forEach(light => { light.material.emissiveIntensity = 1; });
-  
-  // FIX: Reveal the pre-added light instead of creating a new one
-  this.door.userData.doorPointLight.intensity = 2;
-  
-  document.getElementById('controls').innerHTML = '<span style="color: #86efac; font-weight: bold; animation: pulse 1s infinite">DOOR POWERED - Press E to escape!</span>';
-}
+        this.door.userData.powered = true;
+        this.door.userData.lights.forEach(light => { light.material.emissiveIntensity = 1; });
+        
+        this.door.userData.doorPointLight.intensity = 2;
+        
+        document.getElementById('controls').innerHTML = '<span style="color: #86efac; font-weight: bold; animation: pulse 1s infinite">DOOR POWERED - Press E to escape!</span>';
+      }
       
       // --- LINE OF SIGHT CHECK ---
       checkVisibility() {
@@ -625,20 +628,17 @@
         const distance = direction.length();
         direction.normalize();
 
-        // 1. Raycast for walls
         this.raycaster.set(start, direction);
         const intersects = this.raycaster.intersectObjects(this.walls);
         if (intersects.length > 0 && intersects[0].distance < distance) {
-            return false; // Wall blocking view
+            return false; 
         }
 
-        // 2. Field of View & Distance Check (Reasonable LoS)
         if (distance > this.entity.detectionRange) return false;
 
         const entityDir = new THREE.Vector3(0, 0, 1).applyQuaternion(this.entity.mesh.quaternion);
         const angle = direction.angleTo(entityDir);
         
-        // Can see if within FOV (90 deg) OR very close (proximity sense)
         if (angle < this.entity.fov || distance < 8) {
             return true;
         }
@@ -651,7 +651,6 @@
         const dist = this.entity.position.distanceTo(this.player.position);
         const canSee = this.checkVisibility();
 
-        // Visual Static
         if (dist < 15) {
             const intensity = (15 - dist) / 15;
             this.camera.position.x += (Math.random() - 0.5) * intensity * 0.2;
@@ -665,11 +664,13 @@
         if (canSee) {
             this.entity.state = 'chase';
             this.entity.lastKnownPos = this.player.position.clone();
+            this.entity.searchTimer = 0; // Reset
         } else if (this.entity.state === 'chase' && !canSee) {
-            this.entity.state = 'search'; // Lost sight, go to last known pos
+            this.entity.state = 'search'; 
+            this.entity.searchTimer = 0; // Start searching timer
         }
 
-        // --- MOVEMENT LOGIC WITH COLLISION ---
+        // --- MOVEMENT LOGIC WITH COLLISION & TIMERS ---
         let targetPos = null;
         let speed = this.entity.speed;
 
@@ -680,40 +681,42 @@
         } 
         else if (this.entity.state === 'search') {
             targetPos = this.entity.lastKnownPos;
-            speed = this.entity.chaseSpeed; // Still running
-            if (this.entity.position.distanceTo(targetPos) < 2) {
-                this.entity.state = 'patrol'; // Reached spot, nothing there
+            speed = this.entity.chaseSpeed; 
+            this.entity.searchTimer += delta;
+            
+            // Revert back to patrol if spot reached, OR if entity is stuck behind a wall 
+            // and has been "searching" for more than 3 seconds without succeeding.
+            if (this.entity.position.distanceTo(targetPos) < 2 || this.entity.searchTimer > 3.0) {
+                this.entity.state = 'patrol'; 
                 this.setNewPatrolTarget();
             }
         }
         else if (this.entity.state === 'patrol') {
             targetPos = this.entity.patrolTarget;
             speed = this.entity.speed;
-            if (this.entity.position.distanceTo(targetPos) < 2) {
+            this.entity.patrolTimer += delta;
+            
+            // Repath to drift towards the player continuously every 4 seconds,
+            // or if it randomly managed to reach its exact destination sooner.
+            if (this.entity.position.distanceTo(targetPos) < 2 || this.entity.patrolTimer > 4.0) {
                 this.setNewPatrolTarget();
             }
         }
 
-        // Move towards target
         if (targetPos) {
             const direction = new THREE.Vector3().subVectors(targetPos, this.entity.position).normalize();
             
-            // Calculate potential new position
             const moveStep = direction.clone().multiplyScalar(speed * delta);
             const nextPos = this.entity.position.clone().add(moveStep);
 
-            // Rotate mesh
             this.entity.mesh.lookAt(targetPos.x, this.entity.mesh.position.y, targetPos.z);
 
-            // Check collision before moving
             if (!this.checkEntityCollision(nextPos)) {
                 this.entity.position.copy(nextPos);
             } else {
-                // Collision! Slide along wall or pick new target if patrolling
                 if (this.entity.state === 'patrol') {
                     this.setNewPatrolTarget();
                 } else {
-                    // Slide along X or Z if stuck chasing
                     const nextPosX = this.entity.position.clone(); nextPosX.x += moveStep.x;
                     if(!this.checkEntityCollision(nextPosX)) this.entity.position.x += moveStep.x;
                     const nextPosZ = this.entity.position.clone(); nextPosZ.z += moveStep.z;
@@ -722,10 +725,8 @@
             }
         }
 
-        // Update Mesh
         this.entity.mesh.position.copy(this.entity.position);
         
-        // Animation
         const time = Date.now() * 0.002;
         this.entity.mesh.position.y = 3 + Math.sin(time) * 0.5; 
         this.entity.mesh.children[0].rotation.x += delta * 2; 
@@ -900,6 +901,11 @@
       const canvas = document.getElementById('gameCanvas');
       game = new BackroomsGame(canvas);
       clearInterval(timerInterval);
+      
+      // Init Timer Text exactly at start
+      document.getElementById('timerText').textContent = formatTime(timeLeft);
+      document.getElementById('timer').classList.remove('critical');
+      
       timerInterval = setInterval(() => {
         timeLeft--;
         const timerEl = document.getElementById('timer');
