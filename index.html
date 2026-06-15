@@ -311,7 +311,7 @@
           const x = Math.random() * 140 - 70;
           const z = Math.random() * 140 - 70;
           const length = Math.random() * 15 + 10;
-          const rotation = Math.random() * Math.PI;
+          const rotation = Math.floor(Math.random() * 2) * (Math.PI / 2);
           
           if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
           if (z < -75 && Math.abs(x) < 25) continue; 
