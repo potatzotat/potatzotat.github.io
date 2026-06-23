@@ -14,9 +14,17 @@
     </header>
 
     <main class="container">
-        <h2 class="section-title">Trending Games</h2>
+        <h2 id="gridTitle" class="section-title">Trending Games</h2>
+        
         <div id="gameGrid" class="game-grid">
             </div>
+
+        <div id="gamePlayer" class="hidden">
+            <button id="closeGameBtn" class="close-btn">← Back to Arcade</button>
+            <div class="iframe-container">
+                <iframe id="gameFrame" src="" frameborder="0" scrolling="no" allowfullscreen></iframe>
+            </div>
+        </div>
     </main>
 
     <script src="app.js"></script>
