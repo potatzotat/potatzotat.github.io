@@ -1,0 +1,79 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #121214; /* Dark modern background */
+    color: #ffffff;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background-color: #1a1a1e;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f05454;
+}
+
+#searchBar {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: none;
+    background-color: #2a2a30;
+    color: white;
+    width: 300px;
+}
+
+/* Responsive Game Grid */
+.container {
+    padding: 40px;
+}
+
+.section-title {
+    margin-bottom: 20px;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px; /* Space between game cards */
+}
+
+/* Individual Game Cards */
+.game-card {
+    background-color: #1a1a1e;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+    text-align: center;
+}
+
+.game-card:hover {
+    transform: scale(1.05); /* Slight zoom effect on hover */
+}
+
+.game-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Forces thumbnails to be perfect squares */
+    object-fit: cover;
+}
+
+.game-card p {
+    padding: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Cuts off long titles with '...' */
+}
