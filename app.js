@@ -1,16 +1,19 @@
-// A reliable, open-source testing endpoint for HTML5 games
-const API_URL = "https://raw.githubusercontent.com/thegamedevstore/games-json/main/games.json";
+// Tell JavaScript to look at your local file
+const API_URL = "./games.json";
 
 async function fetchGames() {
     try {
         const response = await fetch(API_URL);
+        
+        // If the file isn't found, stop and show an error
+        if (!response.ok) throw new Error("Could not find games.json");
+        
         const games = await response.json();
         
         const grid = document.getElementById('gameGrid');
-        grid.innerHTML = ""; // Clear "Loading..." text if any
+        grid.innerHTML = ""; // Clear out any loading text
         
-        // Take the first 20 games from this list
-        games.slice(0, 20).forEach(game => {
+        games.forEach(game => {
             const card = document.createElement('div');
             card.classList.add('game-card');
             
@@ -19,6 +22,7 @@ async function fetchGames() {
                 <p>${game.title}</p>
             `;
             
+            // This will alert the game URL for now when clicked
             card.addEventListener('click', () => {
                 alert(`Loading game: ${game.title}\nURL: ${game.url}`);
             });
@@ -27,7 +31,7 @@ async function fetchGames() {
         });
     } catch (error) {
         console.error("Error loading games:", error);
-        document.getElementById('gameGrid').innerHTML = "<p>Failed to load games. Make sure you are running a local server!</p>";
+        document.getElementById('gameGrid').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
     }
 }
 
