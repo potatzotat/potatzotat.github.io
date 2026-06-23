@@ -77,3 +77,52 @@ body {
     overflow: hidden;
     text-overflow: ellipsis; /* Cuts off long titles with '...' */
 }
+
+/* --- Game Player / Theater Mode Styles --- */
+
+/* Utility class to hide elements instantly */
+.hidden {
+    display: none !important;
+}
+
+/* Center the player and give it some breathing room */
+#gamePlayer {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* The Back Button */
+.close-btn {
+    background-color: #f05454;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+    background-color: #d44343; /* Darker red on hover */
+}
+
+/* The black box holding the game */
+.iframe-container {
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Standard widescreen format */
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* The actual window to the game */
+#gameFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
