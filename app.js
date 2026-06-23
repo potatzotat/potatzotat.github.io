@@ -1,38 +1,53 @@
-// Tell JavaScript to look at your local file
-const API_URL = "./games.json";
+// 1. The official GameDistribution feed (forced into JSON format)
+const GD_API = "https://catalog.api.gamedistribution.com/api/v2.0/rss/All/?format=json";
 
-async function fetchGames() {
+// 2. The Proxy URL that bypasses the browser's security blocks
+const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(GD_API)}`;
+
+async function autoImportGames() {
+    const grid = document.getElementById('gameGrid');
+    grid.innerHTML = "<p>Auto-importing games from GameDistribution...</p>";
+
     try {
-        const response = await fetch(API_URL);
+        // Fetch the data through our proxy
+        const response = await fetch(PROXY_URL);
+        if (!response.ok) throw new Error("Network issue connecting to proxy.");
         
-        // If the file isn't found, stop and show an error
-        if (!response.ok) throw new Error("Could not find games.json");
+        const proxyData = await response.json();
         
-        const games = await response.json();
+        // The proxy wraps the data in a "contents" string, so we parse it into a real object
+        const gamesList = JSON.parse(proxyData.contents);
         
-        const grid = document.getElementById('gameGrid');
-        grid.innerHTML = ""; // Clear out any loading text
+        // Clear the loading text
+        grid.innerHTML = ""; 
         
-        games.forEach(game => {
+        // Loop through the first 30 games in their live catalog
+        gamesList.slice(0, 30).forEach(game => {
             const card = document.createElement('div');
             card.classList.add('game-card');
             
+            // GameDistribution stores thumbnails in an array called "Asset"
+            const thumbnail = game.Asset[0]; 
+            const title = game.Title;
+            const gameUrl = game.Url;
+            
             card.innerHTML = `
-                <img src="${game.thumbnail}" alt="${game.title}">
-                <p>${game.title}</p>
+                <img src="${thumbnail}" alt="${title}">
+                <p>${title}</p>
             `;
             
-            // This will alert the game URL for now when clicked
             card.addEventListener('click', () => {
-                alert(`Loading game: ${game.title}\nURL: ${game.url}`);
+                alert(`Ready to load game: ${title}\nURL: ${gameUrl}`);
             });
             
             grid.appendChild(card);
         });
+
     } catch (error) {
-        console.error("Error loading games:", error);
-        document.getElementById('gameGrid').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        console.error("Auto-import failed:", error);
+        grid.innerHTML = `<p style="color:red;">Failed to import games. Error: ${error.message}</p>`;
     }
 }
 
-fetchGames();
+// Run the auto-importer when the page loads
+autoImportGames();
